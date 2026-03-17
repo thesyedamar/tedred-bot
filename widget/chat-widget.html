@@ -4,205 +4,460 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>TedRed Chat</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
+:root {
+  --red: #e02020;
+  --red-dim: #b91c1c;
+  --red-glow: rgba(224,32,32,0.35);
+  --bg: #0e0e11;
+  --surface: #17171c;
+  --surface2: #1f1f26;
+  --border: rgba(255,255,255,0.07);
+  --text: #eeeef2;
+  --text-muted: rgba(255,255,255,0.32);
+  --green: #22c55e;
+  --radius: 22px;
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'DM Sans', sans-serif;
-  background: #0d0d0f;
+  font-family: 'Sora', sans-serif;
+  background: var(--bg);
   min-height: 100vh;
 }
 
+/* ── Launcher ── */
 #tr-launcher {
   position: fixed;
   bottom: 28px;
   right: 28px;
-  width: 56px;
-  height: 56px;
-  background: #dc2626;
+  width: 60px;
+  height: 60px;
+  background: var(--red);
   border-radius: 50%;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 24px rgba(220,38,38,0.45);
   z-index: 9999;
-  transition: transform 0.2s;
+  box-shadow: 0 0 0 0 var(--red-glow);
+  animation: pulse-ring 2.5s ease-out infinite;
+  transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), background 0.2s;
 }
-#tr-launcher:hover { transform: scale(1.08); }
-
-#tr-window {
-  position: fixed;
-  bottom: 96px;
-  right: 28px;
-  width: 360px;
-  height: 500px;
-  background: #111114;
-  border-radius: 20px;
-  border: 1px solid rgba(255,255,255,0.08);
-  display: none;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.6);
-  z-index: 9998;
+#tr-launcher:hover {
+  transform: scale(1.12);
+  background: var(--red-dim);
+  animation: none;
 }
-#tr-window.open { display: flex; }
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 var(--red-glow); }
+  70%  { box-shadow: 0 0 0 14px rgba(224,32,32,0); }
+  100% { box-shadow: 0 0 0 0 rgba(224,32,32,0); }
+}
 
-.tr-header {
-  padding: 16px 20px;
-  background: #1a1a1e;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+#tr-launcher svg { position: absolute; transition: opacity 0.2s, transform 0.25s cubic-bezier(.34,1.56,.64,1); }
+#tr-launcher svg.hide { opacity: 0; transform: scale(0.4) rotate(45deg); pointer-events: none; }
+
+/* Notification badge */
+#tr-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 18px;
+  height: 18px;
+  background: var(--green);
+  border-radius: 50%;
+  border: 2px solid var(--bg);
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 600;
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  animation: badge-pop 0.4s cubic-bezier(.34,1.56,.64,1);
 }
+@keyframes badge-pop {
+  from { transform: scale(0); }
+  to   { transform: scale(1); }
+}
+
+/* ── Window ── */
+#tr-window {
+  position: fixed;
+  bottom: 100px;
+  right: 28px;
+  width: 370px;
+  height: 540px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 9998;
+  box-shadow:
+    0 32px 80px rgba(0,0,0,0.7),
+    0 0 0 1px rgba(224,32,32,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+  opacity: 0;
+  transform: translateY(24px) scale(0.95);
+  pointer-events: none;
+  transition:
+    opacity 0.3s cubic-bezier(.16,1,.3,1),
+    transform 0.3s cubic-bezier(.16,1,.3,1);
+  transform-origin: bottom right;
+}
+#tr-window.open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: all;
+}
+
+/* ── Header ── */
+.tr-header {
+  padding: 18px 20px 16px;
+  background: linear-gradient(160deg, #1e1e26 0%, #17171c 100%);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+.tr-header::before {
+  content: '';
+  position: absolute;
+  top: -30px; right: -30px;
+  width: 100px; height: 100px;
+  background: radial-gradient(circle, rgba(224,32,32,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
 .tr-avatar {
-  width: 36px;
-  height: 36px;
-  background: #dc2626;
-  border-radius: 10px;
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(135deg, #e02020 0%, #991b1b 100%);
+  border-radius: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   font-weight: 600;
   font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(224,32,32,0.4);
+  position: relative;
+}
+.tr-avatar::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; right: -2px;
+  width: 10px; height: 10px;
+  background: var(--green);
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+}
+
+.tr-header-info { flex: 1; min-width: 0; }
+.tr-header-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.tr-header-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.tr-typing-indicator {
+  display: none;
+  align-items: center;
+  gap: 3px;
+}
+.tr-typing-indicator span {
+  width: 3px; height: 3px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: hdr-dot 1s infinite;
+}
+.tr-typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
+.tr-typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes hdr-dot {
+  0%,80%,100% { opacity: 0.3; transform: scale(1); }
+  40% { opacity: 1; transform: scale(1.4); }
+}
+.tr-typing-indicator.show { display: flex; }
+
+.tr-close-btn {
+  width: 30px; height: 30px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, transform 0.15s;
   flex-shrink: 0;
 }
-.tr-header-name { font-size: 14px; font-weight: 600; color: #f1f1f1; }
-.tr-header-status { font-size: 11px; color: rgba(255,255,255,0.35); display: flex; align-items: center; gap: 4px; margin-top: 2px; }
-.tr-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; }
+.tr-close-btn:hover { background: rgba(255,255,255,0.1); transform: scale(1.05); }
 
+/* ── Messages ── */
 #tr-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 14px;
+  padding: 16px 14px 8px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+  scroll-behavior: smooth;
 }
 #tr-messages::-webkit-scrollbar { width: 3px; }
-#tr-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+#tr-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
 
-.msg { max-width: 80%; }
-.msg.bot { align-self: flex-start; }
-.msg.user { align-self: flex-end; }
+/* Message entrance animation */
+@keyframes msg-slide-left {
+  from { opacity: 0; transform: translateX(-12px) translateY(4px); }
+  to   { opacity: 1; transform: translateX(0) translateY(0); }
+}
+@keyframes msg-slide-right {
+  from { opacity: 0; transform: translateX(12px) translateY(4px); }
+  to   { opacity: 1; transform: translateX(0) translateY(0); }
+}
+
+.msg { max-width: 82%; display: flex; flex-direction: column; }
+.msg.bot  { align-self: flex-start; animation: msg-slide-left  0.28s cubic-bezier(.16,1,.3,1); }
+.msg.user { align-self: flex-end;   animation: msg-slide-right 0.28s cubic-bezier(.16,1,.3,1); }
 
 .bubble {
   padding: 10px 14px;
-  border-radius: 16px;
-  font-size: 13.5px;
-  line-height: 1.5;
+  font-size: 13px;
+  line-height: 1.6;
   word-break: break-word;
+  position: relative;
 }
 .msg.bot .bubble {
-  background: #1c1c22;
-  color: #e2e2e8;
-  border-bottom-left-radius: 4px;
+  background: var(--surface2);
+  color: #dddde8;
+  border-radius: 16px 16px 16px 4px;
   border: 1px solid rgba(255,255,255,0.06);
 }
 .msg.user .bubble {
-  background: #dc2626;
+  background: linear-gradient(135deg, #e02020 0%, #c01010 100%);
   color: #fff;
-  border-bottom-right-radius: 4px;
+  border-radius: 16px 16px 4px 16px;
+  box-shadow: 0 4px 16px rgba(224,32,32,0.3);
 }
+
+/* Shine effect on user bubble */
+.msg.user .bubble::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.08), transparent);
+  border-radius: 16px 16px 0 0;
+  pointer-events: none;
+}
+
 .msg-time {
-  font-size: 10px;
-  color: rgba(255,255,255,0.2);
+  font-size: 9.5px;
+  color: var(--text-muted);
   margin-top: 4px;
-  padding: 0 2px;
+  padding: 0 4px;
+  font-family: 'JetBrains Mono', monospace;
 }
 .msg.user .msg-time { text-align: right; }
 
-.typing-bubble {
+/* Typing bubble */
+#tr-typing {
+  align-self: flex-start;
+  animation: msg-slide-left 0.22s cubic-bezier(.16,1,.3,1);
+}
+.typing-dots {
   display: flex;
-  gap: 4px;
-  padding: 12px 16px;
-  background: #1c1c22;
-  border-radius: 16px;
-  border-bottom-left-radius: 4px;
+  gap: 5px;
+  padding: 13px 18px;
+  background: var(--surface2);
+  border-radius: 16px 16px 16px 4px;
   border: 1px solid rgba(255,255,255,0.06);
   width: fit-content;
 }
-.typing-bubble span {
-  width: 6px; height: 6px;
-  background: rgba(255,255,255,0.3);
+.typing-dots span {
+  width: 7px; height: 7px;
+  background: rgba(255,255,255,0.25);
   border-radius: 50%;
-  animation: tdot 1.2s infinite;
+  animation: bounce-dot 1.3s ease-in-out infinite;
 }
-.typing-bubble span:nth-child(2) { animation-delay: 0.15s; }
-.typing-bubble span:nth-child(3) { animation-delay: 0.3s; }
-@keyframes tdot {
-  0%,80%,100% { transform: translateY(0); }
-  40% { transform: translateY(-5px); }
+.typing-dots span:nth-child(2) { animation-delay: 0.18s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.36s; }
+@keyframes bounce-dot {
+  0%,60%,100% { transform: translateY(0); background: rgba(255,255,255,0.2); }
+  30% { transform: translateY(-7px); background: rgba(224,32,32,0.8); }
 }
 
-#tr-qr { padding: 0 14px 8px; display: flex; flex-wrap: wrap; gap: 6px; flex-shrink: 0; }
+/* ── Quick replies ── */
+#tr-qr {
+  padding: 4px 14px 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex-shrink: 0;
+}
 .qr-btn {
   background: transparent;
-  border: 1px solid rgba(220,38,38,0.4);
+  border: 1px solid rgba(224,32,32,0.3);
   border-radius: 20px;
-  color: #dc2626;
-  font-size: 12px;
-  font-family: inherit;
-  padding: 5px 12px;
+  color: #e84444;
+  font-size: 11.5px;
+  font-family: 'Sora', sans-serif;
+  font-weight: 500;
+  padding: 5px 13px;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all 0.18s;
+  animation: qr-appear 0.3s cubic-bezier(.16,1,.3,1) both;
 }
-.qr-btn:hover { background: rgba(220,38,38,0.1); }
+.qr-btn:nth-child(2) { animation-delay: 0.06s; }
+.qr-btn:nth-child(3) { animation-delay: 0.12s; }
+@keyframes qr-appear {
+  from { opacity: 0; transform: translateY(6px) scale(0.92); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.qr-btn:hover {
+  background: rgba(224,32,32,0.1);
+  border-color: rgba(224,32,32,0.6);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(224,32,32,0.15);
+}
 
-.tr-input-area {
-  padding: 10px 12px 12px;
-  border-top: 1px solid rgba(255,255,255,0.05);
+/* ── Input area ── */
+.tr-input-wrap {
+  padding: 10px 12px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
   display: flex;
   gap: 8px;
   align-items: flex-end;
   flex-shrink: 0;
+  position: relative;
 }
+.tr-input-wrap::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: 20px; right: 20px;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(224,32,32,0.3), transparent);
+}
+
 #tr-input {
   flex: 1;
-  background: #1c1c22;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 12px;
+  background: var(--surface2);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 13px;
   padding: 10px 14px;
-  color: #f1f1f1;
-  font-size: 13.5px;
-  font-family: inherit;
+  color: var(--text);
+  font-size: 13px;
+  font-family: 'Sora', sans-serif;
   resize: none;
   outline: none;
-  line-height: 1.4;
-  max-height: 90px;
-  transition: border-color 0.15s;
+  line-height: 1.5;
+  max-height: 100px;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
-#tr-input::placeholder { color: rgba(255,255,255,0.2); }
-#tr-input:focus { border-color: rgba(220,38,38,0.5); }
+#tr-input::placeholder { color: rgba(255,255,255,0.18); }
+#tr-input:focus {
+  border-color: rgba(224,32,32,0.4);
+  box-shadow: 0 0 0 3px rgba(224,32,32,0.08);
+}
 
 #tr-send {
-  width: 38px;
-  height: 38px;
-  background: #dc2626;
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, #e02020 0%, #c01010 100%);
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background 0.15s, transform 0.1s;
+  box-shadow: 0 4px 14px rgba(224,32,32,0.35);
+  transition: transform 0.15s cubic-bezier(.34,1.56,.64,1), box-shadow 0.15s, background 0.15s;
+  position: relative;
+  overflow: hidden;
 }
-#tr-send:hover { background: #b91c1c; }
-#tr-send:active { transform: scale(0.92); }
-#tr-send:disabled { background: #2a2a30; cursor: not-allowed; }
+#tr-send::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.12), transparent);
+  pointer-events: none;
+}
+#tr-send:hover {
+  transform: scale(1.08) translateY(-1px);
+  box-shadow: 0 6px 20px rgba(224,32,32,0.5);
+}
+#tr-send:active { transform: scale(0.94); }
+#tr-send:disabled {
+  background: #2a2a32;
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
 
+/* Send ripple */
+#tr-send .ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  transform: scale(0);
+  animation: ripple-out 0.5s linear;
+  pointer-events: none;
+}
+@keyframes ripple-out {
+  to { transform: scale(3); opacity: 0; }
+}
+
+/* ── Footer ── */
 .tr-footer {
   text-align: center;
-  font-size: 10px;
-  color: rgba(255,255,255,0.1);
-  padding: 0 0 10px;
+  font-size: 9.5px;
+  color: rgba(255,255,255,0.08);
+  padding: 0 0 11px;
   flex-shrink: 0;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.06em;
+}
+
+/* ── Divider / date stamp ── */
+.tr-divider {
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+.tr-divider::before, .tr-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+@media (max-width: 420px) {
+  #tr-window { width: calc(100vw - 16px); right: 8px; bottom: 88px; }
 }
 </style>
 </head>
@@ -210,44 +465,56 @@ body {
 
 <script>
 window.TedRedConfig = {
-  API_URL: "https://tedred-bot.onrender.com",
+  API_URL: "http://127.0.0.1:8000",
   BOT_NAME: "TedRed Assistant",
   GREETING: "Hi there! Welcome to TedRed. I am here to help you explore our business solutions. What brings you here today?"
 };
 </script>
 
-<button id="tr-launcher" onclick="trToggle()">
-  <svg id="icon-chat" width="22" height="22" viewBox="0 0 24 24" fill="none"
+<!-- Launcher -->
+<button id="tr-launcher" onclick="trToggle()" aria-label="Open chat">
+  <div id="tr-badge">1</div>
+  <svg id="ic-chat" width="23" height="23" viewBox="0 0 24 24" fill="none"
     stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
   </svg>
-  <svg id="icon-close" width="20" height="20" viewBox="0 0 24 24" fill="none"
-    stroke="#fff" stroke-width="2.5" stroke-linecap="round" style="display:none">
+  <svg id="ic-close" class="hide" width="20" height="20" viewBox="0 0 24 24" fill="none"
+    stroke="#fff" stroke-width="2.5" stroke-linecap="round">
     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
   </svg>
 </button>
 
-<div id="tr-window">
+<!-- Chat window -->
+<div id="tr-window" role="dialog" aria-label="TedRed chat">
   <div class="tr-header">
     <div class="tr-avatar">TR</div>
-    <div>
+    <div class="tr-header-info">
       <div class="tr-header-name" id="tr-bot-name">TedRed Assistant</div>
-      <div class="tr-header-status">
-        <span class="tr-dot"></span> Online · Replies instantly
+      <div class="tr-header-sub">
+        <span id="tr-status-text">Online · Replies instantly</span>
+        <span class="tr-typing-indicator" id="tr-hdr-typing">
+          <span></span><span></span><span></span>
+        </span>
       </div>
     </div>
+    <button class="tr-close-btn" onclick="trToggle()" aria-label="Close">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+        stroke="rgba(255,255,255,0.5)" stroke-width="2.5" stroke-linecap="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
   </div>
 
   <div id="tr-messages"></div>
   <div id="tr-qr"></div>
 
-  <div class="tr-input-area">
-    <textarea id="tr-input" rows="1" placeholder="Type a message..."
-      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,90)+'px'"
+  <div class="tr-input-wrap">
+    <textarea id="tr-input" rows="1" placeholder="Ask me anything..."
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"
       onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();trSend()}"
     ></textarea>
-    <button id="tr-send" onclick="trSend()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+    <button id="tr-send" onclick="trSendClick(event)" aria-label="Send">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
         stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <line x1="22" y1="2" x2="11" y2="13"/>
         <polygon points="22 2 15 22 11 13 2 9 22 2"/>
@@ -264,13 +531,16 @@ window.TedRedConfig = {
   var isOpen    = false;
   var busy      = false;
 
-  var win       = document.getElementById('tr-window');
-  var msgs      = document.getElementById('tr-messages');
-  var qrBox     = document.getElementById('tr-qr');
-  var inp       = document.getElementById('tr-input');
-  var sendBtn   = document.getElementById('tr-send');
-  var iconChat  = document.getElementById('icon-chat');
-  var iconClose = document.getElementById('icon-close');
+  var win        = document.getElementById('tr-window');
+  var msgs       = document.getElementById('tr-messages');
+  var qrBox      = document.getElementById('tr-qr');
+  var inp        = document.getElementById('tr-input');
+  var sendBtn    = document.getElementById('tr-send');
+  var icChat     = document.getElementById('ic-chat');
+  var icClose    = document.getElementById('ic-close');
+  var badge      = document.getElementById('tr-badge');
+  var hdrTyping  = document.getElementById('tr-hdr-typing');
+  var statusText = document.getElementById('tr-status-text');
 
   document.getElementById('tr-bot-name').textContent = cfg.BOT_NAME;
 
@@ -280,13 +550,24 @@ window.TedRedConfig = {
     return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
+  function today() {
+    return new Date().toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+  }
+
+  function addDivider() {
+    var d = document.createElement('div');
+    d.className = 'tr-divider';
+    d.textContent = today();
+    msgs.appendChild(d);
+  }
+
   function addMsg(role, text) {
     var wrap   = document.createElement('div');
     wrap.className = 'msg ' + role;
     var bubble = document.createElement('div');
     bubble.className = 'bubble';
     bubble.textContent = text;
-    var time   = document.createElement('div');
+    var time = document.createElement('div');
     time.className = 'msg-time';
     time.textContent = now();
     wrap.appendChild(bubble);
@@ -307,24 +588,29 @@ window.TedRedConfig = {
   }
 
   function showTyping() {
+    hideTyping();
     var d = document.createElement('div');
-    d.id = 'typing';
-    d.className = 'msg bot';
-    d.innerHTML = '<div class="typing-bubble"><span></span><span></span><span></span></div>';
+    d.id = 'tr-typing';
+    d.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
     msgs.appendChild(d);
     msgs.scrollTop = msgs.scrollHeight;
+    // Header typing indicator
+    statusText.style.display = 'none';
+    hdrTyping.classList.add('show');
   }
 
   function hideTyping() {
-    var t = document.getElementById('typing');
+    var t = document.getElementById('tr-typing');
     if (t) t.remove();
+    statusText.style.display = '';
+    hdrTyping.classList.remove('show');
   }
 
   function doSend(text) {
     if (!text || busy) return;
     busy = true;
     sendBtn.disabled = true;
-    qrBox.innerHTML  = '';
+    qrBox.innerHTML = '';
     addMsg('user', text);
     showTyping();
 
@@ -333,9 +619,7 @@ window.TedRedConfig = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ session_id: sessionId, message: text })
     })
-    .then(function(res) {
-      return res.json();
-    })
+    .then(function(res) { return res.json(); })
     .then(function(data) {
       hideTyping();
       addMsg('bot', data.reply);
@@ -360,22 +644,40 @@ window.TedRedConfig = {
   }
   window.trSend = trSend;
 
+  function trSendClick(e) {
+    // Ripple effect
+    var btn = e.currentTarget;
+    var r = document.createElement('span');
+    r.className = 'ripple';
+    r.style.width = r.style.height = '40px';
+    r.style.left = '0px';
+    r.style.top = '0px';
+    btn.appendChild(r);
+    setTimeout(function() { r.remove(); }, 500);
+    trSend();
+  }
+  window.trSendClick = trSendClick;
+
   function trToggle() {
     isOpen = !isOpen;
+
     if (isOpen) {
       win.classList.add('open');
-      iconChat.style.display  = 'none';
-      iconClose.style.display = 'block';
+      icChat.classList.add('hide');
+      icClose.classList.remove('hide');
+      if (badge) { badge.style.display = 'none'; }
       if (msgs.children.length === 0) {
+        addDivider();
         setTimeout(function() {
           addMsg('bot', cfg.GREETING);
           showQR();
-        }, 300);
+        }, 350);
       }
+      setTimeout(function() { inp.focus(); }, 350);
     } else {
       win.classList.remove('open');
-      iconChat.style.display  = 'block';
-      iconClose.style.display = 'none';
+      icChat.classList.remove('hide');
+      icClose.classList.add('hide');
     }
   }
   window.trToggle = trToggle;
