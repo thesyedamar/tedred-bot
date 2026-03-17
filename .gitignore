@@ -1,0 +1,7 @@
+.env
+credentials.json
+tedred_leads.db
+__pycache__/
+venv/
+*.pyc
+*.pyo
