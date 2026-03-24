@@ -32,7 +32,7 @@ app.mount("/static", StaticFiles(directory="widget"), name="static")
 async def serve_widget():
     return FileResponse("widget/chat-widget.html")
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD", "POST"])
 async def root():
     return {"status": "TedRed bot is live"}
 
